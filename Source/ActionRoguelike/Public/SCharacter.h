@@ -3,9 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "InputAction.h"
 #include "GameFramework/Character.h"
 #include "SCharacter.generated.h"
 
+struct FInputActionInstance;
+class UInputMappingContext;
+class UInputAction;
 class UCameraComponent;
 class USpringArmComponent;
 
@@ -27,6 +31,23 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	USpringArmComponent* SpringArmComponent;
+
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	UInputMappingContext* DefaultInputMapping;
+
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	UInputAction* Input_Move;
+
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	UInputAction* Input_PrimaryAttack;
+
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	UInputAction* Input_Turn;
+
+	void Move(const FInputActionInstance& Instance);
+	void Turn(const FInputActionInstance& Instance);
+
+	void PrimaryAttack();
 
 public:	
 	// Called every frame
