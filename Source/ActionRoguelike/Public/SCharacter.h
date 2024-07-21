@@ -7,6 +7,7 @@
 #include "GameFramework/Character.h"
 #include "SCharacter.generated.h"
 
+class USInteractionComponent;
 struct FInputActionInstance;
 class UInputMappingContext;
 class UInputAction;
@@ -26,14 +27,27 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<AActor> ProjectileClass;
+
+
+	FTimerHandle TimerHandle_PrimaryAttack;
+
+
 
 	UPROPERTY(VisibleAnywhere)
 	UCameraComponent* CameraComp;
 
 	UPROPERTY(VisibleAnywhere)
 	USpringArmComponent* SpringArmComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	USInteractionComponent* InteractionComp;
+
+	UPROPERTY(EditAnywhere, Category="Attack")
+	TSubclassOf<AActor> ProjectileClass;
+
+	UPROPERTY(EditAnywhere, Category="Attack")
+	UAnimMontage* AttackAnim;
+
 
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	UInputMappingContext* DefaultInputMapping;
@@ -50,13 +64,20 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	UInputAction* Input_Jump;
 
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	UInputAction* Input_PrimaryInteract;
+
+
+
+
 	void Move(const FInputActionInstance& Instance);
 	void Turn(const FInputActionInstance& Instance);
 	void Jump();
 	void StopJump();
 
 	void PrimaryAttack();
-
+	void PrimaryInteract();
+	void PrimaryAttack_TimeElapsed();
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

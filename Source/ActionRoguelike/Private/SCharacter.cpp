@@ -9,6 +9,8 @@
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "NavigationSystemTypes.h"
+#include "SInteractionComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values
@@ -27,6 +29,8 @@ ASCharacter::ASCharacter()
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 
 	bUseControllerRotationYaw = false;
+
+	InteractionComp = CreateDefaultSubobject<USInteractionComponent>("InteractionComp");
 
 
 }
@@ -71,14 +75,13 @@ void ASCharacter::Turn(const FInputActionInstance& Instance)
 void ASCharacter::PrimaryAttack()
 {
 	// do stuff
-	FVector HandLocation = GetMesh()->GetSocketLocation("Muzzle_01");
 
-	FTransform SpawnTM = FTransform(GetControlRotation(), HandLocation);
+	PlayAnimMontage(AttackAnim);
 
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	GetWorldTimerManager().SetTimer(TimerHandle_PrimaryAttack, this,
+	&ASCharacter::PrimaryAttack_TimeElapsed, 0.2f);
 
-	GetWorld()->SpawnActor<AActor>(ProjectileClass, SpawnTM, SpawnParams);
+
 
 }
 
@@ -129,7 +132,26 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	&ASCharacter::Jump);
 	InputComp->BindAction(Input_Jump, ETriggerEvent::Completed, this,
 	&ASCharacter::StopJump);
+	InputComp->BindAction(Input_PrimaryInteract, ETriggerEvent::Triggered, this,
+	&ASCharacter::PrimaryInteract);
 
 
 }
 
+void ASCharacter::PrimaryInteract()
+{
+	InteractionComp->PrimaryInteract();
+}
+
+void ASCharacter::PrimaryAttack_TimeElapsed()
+{
+	FVector HandLocation = GetMesh()->GetSocketLocation("Muzzle_01");
+
+	FTransform SpawnTM = FTransform(GetControlRotation(), HandLocation);
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	GetWorld()->SpawnActor<AActor>(ProjectileClass, SpawnTM, SpawnParams);
+
+}
