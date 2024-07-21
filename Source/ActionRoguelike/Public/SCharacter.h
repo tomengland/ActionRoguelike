@@ -26,6 +26,9 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AActor> ProjectileClass;
+
 	UPROPERTY(VisibleAnywhere)
 	UCameraComponent* CameraComp;
 
@@ -44,8 +47,13 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	UInputAction* Input_Turn;
 
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	UInputAction* Input_Jump;
+
 	void Move(const FInputActionInstance& Instance);
 	void Turn(const FInputActionInstance& Instance);
+	void Jump();
+	void StopJump();
 
 	void PrimaryAttack();
 

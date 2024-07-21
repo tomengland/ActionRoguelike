@@ -9,6 +9,7 @@
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values
 ASCharacter::ASCharacter()
@@ -18,9 +19,15 @@ ASCharacter::ASCharacter()
 
 	SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>("SpringArmCompoonent");
 	SpringArmComponent->SetupAttachment(RootComponent);
+	SpringArmComponent->bUsePawnControlRotation = true;
 
 	CameraComp = CreateDefaultSubobject<UCameraComponent>("CameraComponent");
 	CameraComp->SetupAttachment(SpringArmComponent);
+
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+
+	bUseControllerRotationYaw = false;
+
 
 }
 
@@ -54,17 +61,38 @@ void ASCharacter::Turn(const FInputActionInstance& Instance)
 {
 	const FVector2D AxisValue = Instance.GetValue().Get<FVector2D>();
 // Turn Left and Right
-	APawn::AddControllerYawInput(AxisValue.X);
+	AddControllerYawInput(AxisValue.X);
 
+// Turn up and down
+	AddControllerPitchInput(AxisValue.Y);
 
 }
 
 void ASCharacter::PrimaryAttack()
 {
 	// do stuff
-	UE_LOG(LogTemp, Warning, TEXT("Firing"));
+	FVector HandLocation = GetMesh()->GetSocketLocation("Muzzle_01");
+
+	FTransform SpawnTM = FTransform(GetControlRotation(), HandLocation);
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	GetWorld()->SpawnActor<AActor>(ProjectileClass, SpawnTM, SpawnParams);
 
 }
+
+void ASCharacter::Jump()
+{
+	ACharacter::Jump();
+}
+
+void ASCharacter::StopJump()
+{
+	StopJumping();
+}
+
+
 
 // Called every frame
 void ASCharacter::Tick(float DeltaTime)
@@ -97,6 +125,10 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	this, &ASCharacter::PrimaryAttack);
 	InputComp->BindAction(Input_Turn, ETriggerEvent::Triggered, this,
 	&ASCharacter::Turn);
+	InputComp->BindAction(Input_Jump, ETriggerEvent::Triggered, this,
+	&ASCharacter::Jump);
+	InputComp->BindAction(Input_Jump, ETriggerEvent::Completed, this,
+	&ASCharacter::StopJump);
 
 
 }
