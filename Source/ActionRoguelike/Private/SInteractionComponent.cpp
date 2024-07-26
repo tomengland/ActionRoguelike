@@ -24,7 +24,7 @@ void USInteractionComponent::PrimaryInteract()
 	FVector EyeLocation;
 	FRotator EyeRotation;
 	MyOwner->GetActorEyesViewPoint(EyeLocation, EyeRotation);
-	FVector End = EyeLocation + (EyeRotation.Vector() * 1000);
+	FVector End = EyeLocation + (EyeRotation.Vector() * 400);
 
 	//bool bBlockingHit = GetWorld()->LineTraceSingleByObjectType(Hit, EyeLocation, End,
 	//	ObjectQueryParams);
@@ -45,13 +45,13 @@ void USInteractionComponent::PrimaryInteract()
         	{
         		APawn* MyPawn = Cast<APawn>(MyOwner);
         		ISGameplayInterface::Execute_Interact(HitActor, MyPawn);
-        		DrawDebugSphere(GetWorld(), Hit.ImpactPoint, Radius, 32, LineColor,
-false, 3.0f, 0, 2.0f);
+        		//DrawDebugSphere(GetWorld(), Hit.ImpactPoint, Radius, 32, LineColor,
+//false, 3.0f, 0, 2.0f);
         		break;
         	}
         }
 	}
-	DrawDebugLine(GetWorld(), EyeLocation, End, LineColor, false, 3.0f, 0, 2.0f);
+	//DrawDebugLine(GetWorld(), EyeLocation, End, LineColor, false, 3.0f, 0, 2.0f);
 }
 
 
