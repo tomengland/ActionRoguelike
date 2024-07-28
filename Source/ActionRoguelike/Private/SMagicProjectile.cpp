@@ -18,7 +18,7 @@ ASMagicProjectile::ASMagicProjectile()
 
 	SphereComp = CreateDefaultSubobject<USphereComponent>("SphereComp");
 	SphereComp->SetCollisionProfileName("Projectile");
-	SphereComp->OnComponentBeginOverlap.AddDynamic(this, &ASMagicProjectile::OnActorOverlap);
+	
 	RootComponent = SphereComp;
 
 	EffectComp = CreateDefaultSubobject<UParticleSystemComponent>("EffectComp");
@@ -29,25 +29,34 @@ ASMagicProjectile::ASMagicProjectile()
 	ProjectileComp->InitialSpeed = 3500.0f;
 	ProjectileComp->bRotationFollowsVelocity = true;
 	ProjectileComp->bInitialVelocityInLocalSpace = true;
+	ExplodeAsset = nullptr;
 
 }
+void ASMagicProjectile::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+	SphereComp->OnComponentBeginOverlap.AddDynamic(this, &ASMagicProjectile::OnActorOverlap);
+	SphereComp->OnComponentHit.AddDynamic(this, &ASMagicProjectile::OnSphereHit);
+}
+
+
+
 
 // Called when the game starts or when spawned
 void ASMagicProjectile::BeginPlay()
 {
 	Super::BeginPlay();
+	SphereComp->IgnoreActorWhenMoving(GetInstigator(), true);
+	SPlaySound(FlightSound, ProjectileAttenuation);
 	
 }
 
 void ASMagicProjectile::OnActorOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (OtherActor != GetInstigator())
+	if (OtherActor != GetInstigator() && ExplodeAsset)
 	{
-		UParticleSystem* ParticleSystem = Cast<UParticleSystem>(StaticLoadObject(UParticleSystem::StaticClass(), nullptr,
-			TEXT(
-				"/Game/ParagonGideon/FX/Particles/Gideon/Abilities/Primary/FX/P_Gideon_Primary_HitWorld")));
 
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ParticleSystem, (OtherActor->GetActorLocation()));
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplodeAsset, (OtherActor->GetActorLocation()));
 		if (OtherActor)
 		{
 			USAttributesComponent* AttributeComp = Cast<USAttributesComponent>(OtherActor->GetComponentByClass(USAttributesComponent::StaticClass()));
@@ -57,13 +66,34 @@ void ASMagicProjectile::OnActorOverlap(UPrimitiveComponent* OverlappedComponent,
 
 				AttributeComp->ApplyHealthChange(-20.0f);
 
+				SPlaySound(ImpactSound, ProjectileAttenuation);
+
+				
 				Destroy();
 			}
 		}
-
+		SPlaySound(ImpactSound, ProjectileAttenuation);
 		Destroy();
 	}
 
+}
+
+void ASMagicProjectile::SPlaySound(USoundBase* Sound, USoundAttenuation* AttenuationType)
+{
+	if (Sound && AttenuationType)
+	{
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), Sound, GetActorLocation(), 1.0f, 1.0f, 0.0f, AttenuationType);
+	}
+}
+
+void ASMagicProjectile::OnSphereHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	if (ExplodeAsset)
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplodeAsset, GetActorLocation(), GetActorRotation());
+		SPlaySound(ImpactSound, ProjectileAttenuation);
+		Destroy();
+	}
 }
 
 // Called every frame

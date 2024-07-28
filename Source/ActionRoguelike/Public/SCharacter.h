@@ -36,6 +36,7 @@ protected:
     FTimerHandle TimerHandle_Teleport;
     FTimerHandle TimerHandle_Explode;
     FTimerHandle TimerHandle_TeleportActor;
+    FTimerHandle PulseTimerHandle;
 
 
     UPROPERTY(VisibleAnywhere)
@@ -58,6 +59,9 @@ protected:
 
     UPROPERTY(EditAnywhere, Category="Attack")
     UAnimMontage* AttackAnim;
+
+    UPROPERTY(EditAnywhere, Category="Attack")
+    UParticleSystem* MuzzleFlash;
 
 
     UPROPERTY(EditDefaultsOnly, Category="Input")
@@ -104,6 +108,11 @@ protected:
     AActor* SpawnProjectile(TSubclassOf<AActor> ActorClass);
 
     void TeleportActor(AActor* TeleportProjectile, UParticleSystem* ParticleSystem);
+
+    UFUNCTION()
+    void OnHealthChanged(USAttributesComponent* OwningComp, AActor* InstigatorActor, float NewHealth, float Delta);
+
+    virtual void PostInitializeComponents() override;
 
 public:
     // Called every frame

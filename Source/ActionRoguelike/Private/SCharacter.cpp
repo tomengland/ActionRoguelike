@@ -15,6 +15,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystem.h"
 #include "SAttributesComponent.h"
+#include "GameFramework/Character.h"
+#include "Components/CapsuleComponent.h"
 
 // Sets default values
 ASCharacter::ASCharacter()
@@ -38,6 +40,15 @@ ASCharacter::ASCharacter()
     AttributeComp = CreateDefaultSubobject<USAttributesComponent>("AttributeComp");
 
 }
+
+void ASCharacter::PostInitializeComponents()
+{
+    Super::PostInitializeComponents();
+
+    AttributeComp->OnHealthChanged.AddDynamic(this, &ASCharacter::OnHealthChanged);
+}
+
+
 
 // Called when the game starts or when spawned
 void ASCharacter::BeginPlay()
@@ -80,6 +91,14 @@ void ASCharacter::PrimaryAttack()
 
     PlayAnimMontage(AttackAnim);
 
+    USkeletalMeshComponent* MeshComp = FindComponentByClass<USkeletalMeshComponent>();
+
+    if (MeshComp)
+    {
+        UGameplayStatics::SpawnEmitterAttached(MuzzleFlash, MeshComp, FName("Muzzle_01"), FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget);
+    }
+    
+
     GetWorldTimerManager().SetTimer(TimerHandle_PrimaryAttack, this,
                                     &ASCharacter::PrimaryAttack_TimeElapsed, 0.2f);
 }
@@ -110,6 +129,7 @@ void ASCharacter::Teleport()
 void ASCharacter::Teleport_Elapsed()
 {
     AActor* Projectile = SpawnProjectile(TeleportClass);
+    // need to move this into header / assign in bp.
     UParticleSystem* ParticleSystem = Cast<UParticleSystem>(StaticLoadObject(UParticleSystem::StaticClass(), nullptr,
                                                                              TEXT(
                                                                                  "/Game/ParagonGideon/FX/Particles/Gideon/Abilities/Primary/FX/P_Gideon_Primary_HitWorld")));
@@ -158,7 +178,7 @@ void ASCharacter::TeleportActor(AActor* TeleportProjectile, UParticleSystem* Par
 				if (TeleportProjectile == nullptr)
 				{
 					MoveIgnoreActorAdd(GetInstigator());
-					this->TeleportTo(TeleportProjectile->GetActorLocation(), TeleportProjectile->GetActorRotation());
+					this->TeleportTo(TeleportProjectile->GetActorLocation(), TeleportProjectile->GetActorRotation());  // da fuk am i doing here..
 					MoveIgnoreActorRemove(GetInstigator());
 					return;
 				}
@@ -177,6 +197,35 @@ void ASCharacter::TeleportActor(AActor* TeleportProjectile, UParticleSystem* Par
 					}, 0.2f, false);
 			}, 0.2f, false);
 	}
+}
+
+void ASCharacter::OnHealthChanged(USAttributesComponent* OwningComp, AActor* InstigatorActor, float NewHealth, float Delta)
+{
+    if (Delta < 0.0f)
+    {
+      
+		GetMesh()->SetScalarParameterValueOnMaterials("Speed", GetWorld()->TimeSeconds);
+        GetMesh()->SetScalarParameterValueOnMaterials("UseHitFlash", 1.0f);
+        GetWorld()->GetTimerManager().SetTimer(PulseTimerHandle, [this]()
+            {
+                GetMesh()->SetScalarParameterValueOnMaterials("UseHitFlash", 0.0f);
+                GetWorld()->GetTimerManager().ClearTimer(PulseTimerHandle);
+
+            }, 0.3f, false);
+
+      
+    }
+
+    if (NewHealth <= 0.0f && Delta < 0.0f)
+    {
+        APlayerController* PC = Cast<APlayerController>(GetController());
+
+        DisableInput(PC);
+        if (GetCapsuleComponent())
+        {
+            GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        }
+    }
 }
 
 void ASCharacter::Jump()
@@ -232,4 +281,6 @@ void ASCharacter::PrimaryInteract()
 void ASCharacter::PrimaryAttack_TimeElapsed()
 {
     SpawnProjectile(PrimaryAttackClass);
+
+
 }
