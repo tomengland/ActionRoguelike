@@ -88,7 +88,7 @@ void ASMagicProjectile::SPlaySound(USoundBase* Sound, USoundAttenuation* Attenua
 
 void ASMagicProjectile::OnSphereHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	if (ExplodeAsset)
+	if (OtherActor != GetInstigator() && ExplodeAsset)
 	{
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplodeAsset, GetActorLocation(), GetActorRotation());
 		SPlaySound(ImpactSound, ProjectileAttenuation);
